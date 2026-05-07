@@ -29,6 +29,7 @@ services:
       - OPENCLAW_TIMEOUT_SECONDS=${OPENCLAW_TIMEOUT_SECONDS:-25}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - ALLOWED_USER_IDS=${ALLOWED_USER_IDS:-}
+      - ALLOWED_GROUP_IDS=${ALLOWED_GROUP_IDS:-}
     depends_on:
       openclaw:
         condition: service_healthy
