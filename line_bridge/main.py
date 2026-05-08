@@ -280,10 +280,12 @@ async def _handle_event(event: Dict[str, Any]) -> None:
     if event.get("type") != "message":
         return
     message = event.get("message") or {}
+    reply_token = event.get("replyToken")
     if message.get("type") != "text":
+        if reply_token and message.get("type") == "image":
+            await _reply_to_line(reply_token, "抱歉，目前不支援圖片訊息，請傳送文字。")
         return
     text = message.get("text") or ""
-    reply_token = event.get("replyToken")
     if not reply_token or not text:
         return
 
