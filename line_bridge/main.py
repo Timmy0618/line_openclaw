@@ -63,9 +63,14 @@ logger = logging.getLogger("line_bridge")
 _session_locks: dict[str, asyncio.Lock] = {}
 _session_locks_meta_lock = asyncio.Lock()
 
-# group message buffer: session_id -> list of {user_id, text}
+# group message buffer: session_id -> list of {display_name, text}
 # in-memory only; cleared on restart
 _group_buffers: dict[str, list[dict]] = {}
+
+# display name cache: user_id -> display_name
+_display_name_cache: dict[str, str] = {}
+
+LINE_GROUP_MEMBER_URL = "https://api.line.me/v2/bot/group/{group_id}/member/{user_id}"
 
 
 async def _get_or_create_session_lock(session_id: str) -> asyncio.Lock:
@@ -76,9 +81,30 @@ async def _get_or_create_session_lock(session_id: str) -> asyncio.Lock:
         return _session_locks[session_id]
 
 
-def _buffer_append(session_id: str, user_id: str, text: str) -> None:
+async def _get_display_name(user_id: str, group_id: str) -> str:
+    if user_id in _display_name_cache:
+        return _display_name_cache[user_id]
+    try:
+        url = LINE_GROUP_MEMBER_URL.format(group_id=group_id, user_id=user_id)
+        resp = await _client.get(
+            url,
+            headers={"Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}"},
+        )
+        if resp.status_code == 200:
+            name = resp.json().get("displayName") or user_id
+        else:
+            logger.warning("Failed to get display name for %s: HTTP %s", user_id, resp.status_code)
+            name = user_id
+    except Exception:
+        logger.exception("Error fetching display name for %s", user_id)
+        name = user_id
+    _display_name_cache[user_id] = name
+    return name
+
+
+def _buffer_append(session_id: str, display_name: str, text: str) -> None:
     buf = _group_buffers.setdefault(session_id, [])
-    buf.append({"user_id": user_id, "text": text})
+    buf.append({"display_name": display_name, "text": text})
     if len(buf) > GROUP_BUFFER_SIZE:
         buf.pop(0)
 
@@ -87,7 +113,7 @@ def _format_buffer_context(session_id: str) -> str:
     buf = _group_buffers.get(session_id, [])
     if not buf:
         return ""
-    lines = "\n".join(f"{m['user_id']}: {m['text']}" for m in buf)
+    lines = "\n".join(f"{m['display_name']}: {m['text']}" for m in buf)
     return f"（以下是本次對話的近期群組訊息，供你參考）\n{lines}\n（以上結束）\n\n"
 
 
@@ -316,8 +342,9 @@ async def _handle_event(event: Dict[str, Any]) -> None:
         bot_mention = next((m for m in mentionees if m.get("isSelf")), None)
         if not bot_mention:
             # Passive monitoring: buffer the message, no OpenClaw call
-            _buffer_append(session_id, user_id, text)
-            logger.info("Buffered group message | session=%s user=%s", session_id, user_id)
+            display_name = await _get_display_name(user_id, raw_id)
+            _buffer_append(session_id, display_name, text)
+            logger.info("Buffered group message | session=%s user=%s name=%s", session_id, user_id, display_name)
             return
         # Strip @mention text, prepend buffer context
         idx = bot_mention.get("index", 0)
