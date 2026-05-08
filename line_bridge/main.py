@@ -292,11 +292,11 @@ async def _handle_event(event: Dict[str, Any]) -> None:
     user_id = source.get("userId", "")
 
     if source_type == "user":
-        session_id = f"line:user:{user_id}"
+        session_id = f"line-user-{user_id}"
         group_context = ""
     else:
         raw_id = source.get("groupId") or source.get("roomId") or ""
-        session_id = f"line:{source_type}:{raw_id}"
+        session_id = f"line-{source_type}-{raw_id}"
         group_context = f" group={raw_id}"
 
     logger.info("Incoming message | type=%s%s user=%s text=%r", source_type, group_context, user_id, text[:80])
