@@ -2,7 +2,7 @@ services:
   openclaw:
     image: ghcr.io/openclaw/openclaw:2026.5.6-slim
     ports:
-      - "127.0.0.1:19001:18789"
+      - "127.0.0.1:${OPENCLAW_HOST_PORT:-19001}:18789"
     volumes:
       - ./.openclaw:/home/node/.openclaw
     environment:
@@ -25,7 +25,7 @@ services:
     environment:
       - LINE_CHANNEL_ACCESS_TOKEN=${LINE_CHANNEL_ACCESS_TOKEN}
       - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET}
-      - OPENCLAW_CONTAINER=${OPENCLAW_CONTAINER:-line_openclaw-openclaw-1}
+      - OPENCLAW_CONTAINER=${COMPOSE_PROJECT_NAME:-line_openclaw}-openclaw-1
       - OPENCLAW_TIMEOUT_SECONDS=${OPENCLAW_TIMEOUT_SECONDS:-25}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - ALLOWED_USER_IDS=${ALLOWED_USER_IDS:-}
