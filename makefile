@@ -7,6 +7,7 @@ help:
 
 ## 啟動 OpenClaw + line-bridge
 up:
+	@mkdir -p .openclaw
 	@docker compose up -d --build openclaw line-bridge
 	@echo "Waiting for OpenClaw to be healthy..."
 	@for i in $$(seq 1 30); do \
