@@ -51,9 +51,29 @@ LINE_CHANNEL_SECRET=...            # LINE Bot channel secret
 make up
 ```
 
-OpenClaw 首次啟動會自動初始化設定，啟動後透過 OpenClaw CLI 或 Web UI 設定 AI model 與 auth。
+### 4. 設定 OpenClaw LLM 模型
 
-### 4. 開啟 Cloudflare Tunnel 並設定 LINE webhook
+透過互動式 CLI 設定 model 與登入 provider：
+
+```bash
+docker exec -it ${COMPOSE_PROJECT_NAME:-line_openclaw}-openclaw-1 node openclaw.mjs configure --section model
+```
+
+依照提示選擇 provider（GitHub Copilot、OpenAI、Anthropic 等）並完成登入驗證。
+
+完成後確認設定：
+
+```bash
+docker exec ${COMPOSE_PROJECT_NAME:-line_openclaw}-openclaw-1 node openclaw.mjs models list
+```
+
+若要直接指定預設 model：
+
+```bash
+docker exec ${COMPOSE_PROJECT_NAME:-line_openclaw}-openclaw-1 node openclaw.mjs models set github-copilot/claude-sonnet-4.6
+```
+
+### 5. 開啟 Cloudflare Tunnel 並設定 LINE webhook
 
 ```bash
 make cf-go
