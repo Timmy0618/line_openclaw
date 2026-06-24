@@ -45,7 +45,6 @@ services:
 
   searxng:
     image: searxng/searxng:latest
-    container_name: searxng
     restart: unless-stopped
     # bridge 網路：openclaw 用 service name searxng:8080 連（見 openclaw.json searxng baseUrl）
     environment:
