@@ -8,10 +8,10 @@ help:
 ## 啟動 OpenClaw + line-bridge
 up:
 	@mkdir -p .openclaw
-	@docker compose up -d --build openclaw line-bridge
+	@docker compose up -d --build openclaw line-bridge searxng
 	@echo "Waiting for OpenClaw to be healthy..."
 	@for i in $$(seq 1 30); do \
-		if docker compose exec openclaw node -e "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" 2>/dev/null; then \
+		if docker compose exec openclaw node -e "fetch('http://127.0.0.1:19001/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" 2>/dev/null; then \
 			echo "OpenClaw is ready at http://localhost:19001"; break; \
 		fi; \
 		sleep 1; \

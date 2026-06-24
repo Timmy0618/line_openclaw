@@ -22,14 +22,17 @@ LINE App
 
 | 服務 | Image | 內部 Port | Host Port | 說明 |
 |------|-------|-----------|-----------|------|
-| `openclaw` | `ghcr.io/openclaw/openclaw:2026.5.6-slim` | 18789 | 127.0.0.1:19001 | AI Gateway |
+| `openclaw` | `ghcr.io/openclaw/openclaw:latest` | 19001 | 無（bridge，gateway 綁容器內 loopback） | AI Gateway |
 | `line-bridge` | 本地 build (`line_bridge/`) | 8000 | 無（內部） | LINE webhook 處理 |
 | `cloudflared` | `cloudflare/cloudflared:latest` | — | — | HTTPS tunnel（profile: tunnel） |
 
 ## 重要設定
 
 ### OpenClaw (`/.openclaw/openclaw.json`)
-- **AI Model**: `github-copilot/claude-sonnet-4.6`
+- **AI Model**: `vllm/qwen3.6-35b`（本地 vLLM，OpenAI 相容 `/v1`）
+- **vLLM 連線**: openclaw 跑 bridge 網路，用 `http://host.docker.internal:8000/v1` 連 host 上的 vLLM（compose 加 `extra_hosts: host.docker.internal:host-gateway`）。API key 走 `VLLM_API_KEY` 環境變數（無驗證時任意值即可）
+- **Web search**: searxng 服務同在 bridge 網路，openclaw 用 service name `http://searxng:8080` 連
+- **Gateway port**: 本容器 gateway 綁容器內 `loopback:19001`（`gateway.port: 19001`, `gateway.bind: loopback`），不發佈到 host。bridge 走 `docker exec` 跑 CLI（讀同一份 config 連 19001，token 才對得上），不需 HTTP 埠
 - **Auth**: Bearer token（見 `gateway.auth.token`）
 - **LINE plugin**: 停用（`@openclaw/line` disabled）— LINE 由 Python bridge 處理
 - **Session**: `agents/main/sessions/sessions.json`（bridge 啟動時自動讀取）
